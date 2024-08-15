@@ -60,3 +60,5 @@ Check out:
 https://simonprickett.dev/wifi-setup-with-raspberry-pi-pico-w/
 and
 https://ghubcoder.github.io/posts/deep-sleeping-the-pico-micropython/
+
+I'm also very grateful to the [maintainers of aprs.fi](https://aprs.fi/page/credits) - it's a great service with a very intuitive API.
