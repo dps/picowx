@@ -33,10 +33,17 @@ Use your phone or computer to connect to the `picowx` wifi network. A captive po
 You'll see a screen like this:
 <img width="610" alt="Screenshot 2024-08-14 at 6 27 49 PM" src="https://github.com/user-attachments/assets/9604ecde-8076-4514-92b6-ea8f6bde2b87">
 
-Enter the wifi network name and password that you'd like your device to connect to. The station callsign for the weather station you'd like to track can be found via https://aprs.fi/. Create an account on `aprs.fi` as you'll need an API key also.
+Enter the wifi network name and password that you'd like your device to connect to. The station callsign for the weather station you'd like to track can be found via https://aprs.fi/.
 
 <img width="1238" alt="Screenshot 2024-08-14 at 6 29 45 PM" src="https://github.com/user-attachments/assets/197f57cf-b399-40d3-8a88-3bf5ce674dd9">
 aprs.fi shows, by default, the stations near your current location - choose any one marked as a `WX` (weather reporting) station and enter its callsign in the config ui.
+
+Next, you'll need an aprs.fi API key. Create an account on `aprs.fi` and then you'll find this at https://aprs.fi/account/ 
+<img width="412" alt="Screenshot 2024-08-14 at 7 33 18 PM" src="https://github.com/user-attachments/assets/13d22d84-9f5f-4bf7-96aa-79cb75caf867">
+
+The aprs.fi API has a number of [terms](https://aprs.fi/page/api), which this project complies with, but do keep them in mind if you're making any modifications.
+
+Optionally, you can add a station nickname, which will be displayed in the UI instead of the callsign and your timezone offset in hours to UTC (e.g. `-7` for PST) if you'd like to see updated times in your local timezone. If you leave this empty, you'll see updated times in UTC.
 
 ## Standing on the shoulders of giants
 Large parts of this project were heavily inspired by ghubcoder and Simon Prickett – I'm very grateful to them for writing up and open sourcing their work!
