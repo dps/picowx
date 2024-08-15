@@ -61,7 +61,12 @@ You can refresh the display at any time by pressing button A on the Inky Pack.
 
 https://github.com/user-attachments/assets/94a6b6dc-041e-45d1-a4c0-5800111ca9b5
 
+## Power consumption
 
+By using `sleep_goto_dormant_until_pin` from `pico-extras`, this project consumes about 1.4mA when asleep.
+
+![IMG_9603](https://github.com/user-attachments/assets/5964a28b-eb45-4e7d-979a-a84859f6e836)
+Power consumption verified via my very low-fi multimeter setup.
 
 ## Standing on the shoulders of giants
 Large parts of this project were heavily inspired by ghubcoder and Simon Prickett – I'm very grateful to them for writing up and open sourcing their work!
