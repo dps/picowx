@@ -52,6 +52,16 @@ Finally, save your config and you'll see a page a bit like this:
 
 <img width="414" alt="Screenshot 2024-08-14 at 7 39 48 PM" src="https://github.com/user-attachments/assets/36be99cf-3a75-440d-8f3e-3a9898419507">
 
+### Application mode
+Once configured, picowx will connect to the configured network, download the latest weather report for the station you set up, display it on the eInk screen and then go to sleep.
+
+You can refresh the display at any time by pressing button A on the Inky Pack.
+
+
+
+https://github.com/user-attachments/assets/94a6b6dc-041e-45d1-a4c0-5800111ca9b5
+
+
 
 ## Standing on the shoulders of giants
 Large parts of this project were heavily inspired by ghubcoder and Simon Prickett – I'm very grateful to them for writing up and open sourcing their work!
