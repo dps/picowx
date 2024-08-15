@@ -12,3 +12,9 @@ Uses the aprs.fi API via your WiFi network to display weather reports transmitte
 
 ## Software
 Most of the logic is implemented in micropython, but the dormant sleep mode requires custom C code. I've built a special version of pimoroni flavor micropython to add this functionality. You can find a flashable .uf2 file in this repo and look or tiner with the micropython changes directly in https://github.com/dps/micropython. https://github.com/dps/pimoroni-pico is a fork of pimoroni's micropython (with support for Inky pack) which pulls in my custom micropython and has a Github action / continuous build which produced that .uf2 file should you wish to reproduce it yourself.
+
+## Standing on the shoulders of giants
+Large parts of this project were heavily inspired by:
+https://ghubcoder.github.io/posts/deep-sleeping-the-pico-micropython/
+and
+https://simonprickett.dev/wifi-setup-with-raspberry-pi-pico-w/
