@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>PicoWX</title>
+        <style>
+            /* Global Styles */
+            html {
+                --text-color: rgba(0, 0, 0, 0.87);
+                --selected-text-color: #0070e0;
+                --text-placeholder-color: rgba(0, 0, 0, 0.54);
+                --text-link-color: #0070e0;
+                --background-color: white;
+                --shadow-color: rgba(0, 0, 0, 0.2);
+                --divider-color: rgba(0, 0, 0, 0.15);
+                color: var(--text-color);
+                background-color: var(--background-color);
+            }
+
+            body {
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+                line-height: 1.5em;
+                min-height: 100vh;
+                margin: 0;
+                padding: 20px;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                background-color: var(--background-color);
+            }
+
+            .container {
+                max-width: 600px;
+                width: 100%;
+                background: white;
+                padding: 30px;
+                border-radius: 8px;
+                box-shadow: 0 4px 10px var(--shadow-color);
+            }
+
+            h1 {
+                font-size: 24px;
+                margin-bottom: 16px;
+                text-align: center;
+                color: var(--selected-text-color);
+            }
+
+            hr {
+                border: none;
+                border-top: 1px solid var(--divider-color);
+                margin: 20px 0;
+            }
+
+            p {
+                font-size: 16px;
+                margin-bottom: 16px;
+                text-align: center;
+            }
+
+            label {
+                font-size: 14px;
+                margin-bottom: 8px;
+                display: block;
+            }
+
+            input[type="text"] {
+                width: 100%;
+                padding: 12px;
+                font-size: 16px;
+                border: 1px solid var(--divider-color);
+                border-radius: 4px;
+                margin-bottom: 16px;
+                box-sizing: border-box;
+                transition: border-color 0.3s;
+            }
+
+            input[type="text"]:focus {
+                border-color: var(--selected-text-color);
+                outline: none;
+            }
+
+            button {
+                width: 100%;
+                padding: 12px;
+                font-size: 16px;
+                background-color: var(--selected-text-color);
+                color: white;
+                border: none;
+                border-radius: 4px;
+                cursor: pointer;
+                transition: background-color 0.3s;
+            }
+
+            button:hover {
+                background-color: darkblue;
+            }
+
+            small {
+                font-size: 12px;
+                color: var(--text-placeholder-color);
+            }
+
+            a {
+                color: var(--text-link-color);
+                text-decoration: none;
+            }
+
+            a:hover {
+                text-decoration: underline;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>PicoWX</h1>
+            <hr/>
+            <h1>Setup</h1>
+            <p>You are connected to the PicoWX setup page.</p>
+            <p>Let's configure Wi-Fi and station:</p>
+            <form action="/configure" method="POST" autocomplete="off" autocapitalize="none">
+                <label for="ssid">SSID:</label>
+                <input type="text" id="ssid" name="ssid" placeholder="Enter your Wi-Fi SSID">
+
+                <label for="password">Password:</label>
+                <input type="text" id="password" name="password" placeholder="Enter your Wi-Fi password">
+
+                <label for="callsign">Station Callsign:</label>
+                <small>Find this at <a href="https://aprs.fi/">aprs.fi</a></small>
+                <input type="text" id="callsign" name="callsign" placeholder="Enter the station callsign you want to show">
+
+                <label for="callsign">Station Nickname (optional):</label>
+                <input type="text" id="nickname" name="nickname" placeholder="Enter a station nickname you want to show">
+
+                <label for="api">aprs.fi API key:</label>
+                <small>Find this at <a href="https://aprs.fi/account/">aprs.fi / My Account</a></small>
+                <input type="text" id="api" name="api" placeholder="Enter your API key">
+
+                <label for="tz">Timezone offset from UTC</label>
+                <input type="text" id="tz" name="tz" placeholder="Optional, if not provided updated times show in UTC">
+
+                
+
+                <button type="submit">Save</button>
+            </form>
+        </div>
+    </body>
+</html>

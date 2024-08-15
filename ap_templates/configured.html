@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Wifi Configured</title>
+        <style>
+            /* Global Styles */
+            html {
+                --text-color: rgba(0, 0, 0, 0.87);
+                --selected-text-color: #0070e0;
+                --text-placeholder-color: rgba(0, 0, 0, 0.54);
+                --text-link-color: #0070e0;
+                --background-color: white;
+                --shadow-color: rgba(0, 0, 0, 0.2);
+                --divider-color: rgba(0, 0, 0, 0.15);
+                color: var(--text-color);
+                background-color: var(--background-color);
+            }
+
+            body {
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+                line-height: 1.5em;
+                min-height: 100vh;
+                margin: 0;
+                padding: 20px;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                background-color: var(--background-color);
+            }
+
+            .container {
+                max-width: 600px;
+                width: 100%;
+                background: white;
+                padding: 30px;
+                border-radius: 8px;
+                box-shadow: 0 4px 10px var(--shadow-color);
+            }
+
+            h1 {
+                font-size: 24px;
+                margin-bottom: 16px;
+                text-align: center;
+                color: var(--selected-text-color);
+            }
+
+            hr {
+                border: none;
+                border-top: 1px solid var(--divider-color);
+                margin: 20px 0;
+            }
+
+            p {
+                font-size: 16px;
+                margin-bottom: 16px;
+                text-align: center;
+            }
+
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>PicoWX</h1>
+            <hr/>
+            <h1>Wifi Configured</h1>
+            <p>The device will now reboot and attempt to connect to the &quot;{{ssid}}&quot; wireless network...</p>
+        </div>
+    </body>
+</html>
