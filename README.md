@@ -35,6 +35,9 @@ You'll see a screen like this:
 
 Enter the wifi network name and password that you'd like your device to connect to. The station callsign for the weather station you'd like to track can be found via https://aprs.fi/. Create an account on `aprs.fi` as you'll need an API key also.
 
+<img width="1238" alt="Screenshot 2024-08-14 at 6 29 45 PM" src="https://github.com/user-attachments/assets/197f57cf-b399-40d3-8a88-3bf5ce674dd9">
+aprs.fi shows, by default, the stations near your current location - choose any one marked as a `WX` (weather reporting) station and enter its callsign in the config ui.
+
 ## Standing on the shoulders of giants
 Large parts of this project were heavily inspired by ghubcoder and Simon Prickett – I'm very grateful to them for writing up and open sourcing their work!
 
