@@ -65,7 +65,8 @@ https://github.com/user-attachments/assets/94a6b6dc-041e-45d1-a4c0-5800111ca9b5
 
 By using `sleep_goto_dormant_until_pin` from `pico-extras`, this project consumes about 1.4mA when asleep.
 
-![IMG_9603](https://github.com/user-attachments/assets/5964a28b-eb45-4e7d-979a-a84859f6e836)
+![IMG_9603](https://github.com/user-attachments/assets/80096b62-8fb8-4fd5-bd53-1b19cc422e17)
+
 Power consumption verified via my very low-fi multimeter setup.
 
 ## Standing on the shoulders of giants
