@@ -9,6 +9,7 @@ Uses the aprs.fi API via your WiFi network to display weather reports transmitte
 - Pimoroni Inky Pack
 - Pimoroni LiPo shim and battery (optional)
 - 0.1" headers for pico-w, you'll need to solder these on (or buy a pico-wh with pre-soldered headers)
+  
 [digikey parts list, minus battery](https://www.digikey.com/en/mylists/list/2R079622OC)
 
 ## Software
