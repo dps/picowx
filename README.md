@@ -22,8 +22,8 @@ Most of the logic is implemented in micropython, but the dormant sleep mode requ
 - Flash the .uf2 file (hold down the bootsel button while plugging your pico-w into your computer, then copy the .uf2 file to the mass storage volume that appears).
 - Copy the py and html files in this repo to the board using Thonny
 - Install the following dependencies via Thonny's Tools...Manage Plugins... menu
-  - phew [project page](https://github.com/pimoroni/phew)
-  - urllib [project page](https://github.com/pfalcon/micropython-lib)
+  - phew [project page](https://github.com/pimoroni/phew) micropython_phew-0.0.3
+  - urllib [project page](https://github.com/pfalcon/micropython-lib) micropython_urllib.urequest-0.6.3
 - Reboot, configuration mode will start
 
 ### Configuration mode
