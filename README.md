@@ -24,6 +24,7 @@ Most of the logic is implemented in micropython, but the dormant sleep mode requ
 - Install the following dependencies via Thonny's Tools...Manage Plugins... menu
   - phew [project page](https://github.com/pimoroni/phew) micropython_phew-0.0.3
   - urllib [project page](https://github.com/pfalcon/micropython-lib) micropython_urllib.urequest-0.6.3
+    - edit `urequest.py` to `import ssl` instead of `import ussl` 
 - Reboot, configuration mode will start
 
 ### Configuration mode
