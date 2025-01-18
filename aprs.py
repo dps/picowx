@@ -27,19 +27,19 @@ def draw_arrow(center_x, center_y, length, heading):
     # Draw the arrow shaft
     graphics.line(start_x, start_y, end_x, end_y, 2)
 
-    arrowhead_length = length / 4  # Length of each side of the arrowhead
+    arrowhead_width = length / 2  # Length of each side of the arrowhead
     
-    ah_x = center_x + int(math.cos(heading_rad+RAD_45_DEGREES) * (arrowhead_length))
-    ah_y = center_y - int(math.sin(heading_rad+RAD_45_DEGREES) * (arrowhead_length))
+    ah_x = center_x + int(math.cos(heading_rad+RAD_45_DEGREES) * (arrowhead_width))
+    ah_y = center_y - int(math.sin(heading_rad+RAD_45_DEGREES) * (arrowhead_width))
 
     graphics.line(ah_x, ah_y, end_x, end_y, 2)
 
-    ah_x = center_x + int(math.cos(heading_rad-RAD_45_DEGREES) * (arrowhead_length))
-    ah_y = center_y - int(math.sin(heading_rad-RAD_45_DEGREES) * (arrowhead_length))
+    ah_x = center_x + int(math.cos(heading_rad-RAD_45_DEGREES) * (arrowhead_width))
+    ah_y = center_y - int(math.sin(heading_rad-RAD_45_DEGREES) * (arrowhead_width))
 
     graphics.line(ah_x, ah_y, end_x, end_y, 2)
 
-def draw_tides(center_x, center_y, tide_data):
+def draw_tides(center_x, center_y, tide_data, width=100, height=24):
     if not tide_data or "predictions" not in tide_data:
         return
         
@@ -53,19 +53,15 @@ def draw_tides(center_x, center_y, tide_data):
     max_tide = max(values)
     tide_range = max_tide - min_tide
     
-    # Graph dimensions
-    graph_width = 100
-    graph_height = 24
-    
     # Plot points and connect them
     prev_x = prev_y = None
     for i, pred in enumerate(predictions):
-        # X coordinate based on time position (0 to graph_width)
-        x = center_x - graph_width//2 + (i * graph_width) // (len(predictions) - 1)
+        # X coordinate based on time position (0 to width)
+        x = center_x - width//2 + (i * width) // (len(predictions) - 1)
         
         # Y coordinate based on tide height
         value = float(pred["v"])
-        y = center_y - int(((value - min_tide) / tide_range) * graph_height)
+        y = center_y - int(((value - min_tide) / tide_range) * height)
         
         # Draw point
         graphics.pixel(x, y)
@@ -73,6 +69,11 @@ def draw_tides(center_x, center_y, tide_data):
         # Connect to previous point
         if prev_x is not None:
             graphics.line(prev_x, prev_y, x, y, 1)
+            
+        # Check if time ends in :00 (on the hour)
+        if pred["t"].split()[1].endswith(":00"):
+            # Draw vertical line from the tide point to the bottom
+            graphics.line(x, y, x, center_y + height//2, 1)
             
         prev_x, prev_y = x, y
 
@@ -83,7 +84,7 @@ def time_in_tz(unix_timestamp, tz_offset, timeFormat="24"):
     
     hour = local_time[3]
     if timeFormat == "12":
-        am_pm = "AM" if hour < 12 else "PM"
+        am_pm = "a" if hour < 12 else "p"
         hour = 12 if hour == 0 else hour % 12 or 12
         formatted_time = f"{local_time[1]:02d}-{local_time[2]:02d} {hour}:{local_time[4]:02d}{am_pm}"
     else:
@@ -186,7 +187,7 @@ def aprs_update(config, nickname=None, tz_offset=None):
                     next_time_timestamp = time.mktime((date_parts[0], date_parts[1], date_parts[2], 
                                                      time_parts[0], time_parts[1], 0, 0, 0, 0))
                     next_time = time_in_tz(next_time_timestamp, tz_offset, timeFormat).split()[1]  # Get just the time portion
-                    tide_info = f"{current_tide:.1f}' {tide_type} {next_time}"
+                    tide_info = f"{current_tide:.1f}' {tide_type}: {next_time}"
                 else:
                     tide_info = f"{current_tide:.1f}'"
         except Exception as e:
@@ -199,7 +200,7 @@ def aprs_update(config, nickname=None, tz_offset=None):
     graphics.set_pen(0)
     
     # Initialize y position
-    y_pos = 0
+    y_pos = 3
     
     if not tide_info:
         y_pos += 15
@@ -221,20 +222,25 @@ def aprs_update(config, nickname=None, tz_offset=None):
         temp = celsius_to_fahrenheit(temp)
     humidity = aprs_data["entries"][0]["humidity"]
     pressure = float(aprs_data["entries"][0]["pressure"])
-    graphics.text(f"{temp:.0f}{units} {humidity}% {pressure:.0f}mb", 10, y_pos, wordwrap=WIDTH - 20, scale=3)
-    y_pos += 30
+    graphics.text(f"{temp:.0f}{units.lower()} {humidity}% {pressure:.0f}mb", 10, y_pos, wordwrap=WIDTH - 20, scale=3)
+    y_pos += 29
     
     # Draw wind info
     wind_speed = aprs_data["entries"][0]["wind_speed"]
     wind_direction = aprs_data["entries"][0]["wind_direction"]
-    graphics.text(f"{wind_speed} m/s", 10, y_pos, wordwrap=WIDTH - 20, scale=3)
-    draw_arrow(140, y_pos + 14, 30, int(wind_direction))  # Adjust arrow y position relative to text
-    y_pos += 30
+    graphics.text(f"{wind_speed}m/s", 10, y_pos, wordwrap=WIDTH - 20, scale=3)
+    draw_arrow(120, y_pos + 10, 18, int(wind_direction))  # Adjust arrow y position relative to text
+    y_pos += 29
     
     # Draw tide info if available
     if tide_info:
         graphics.text(tide_info, 10, y_pos, wordwrap=WIDTH - 20, scale=3)
-        draw_tides(200, y_pos + 30, tide_data)  # Adjust tide graph position relative to text
+        # Position tide graph in bottom right
+        tide_graph_width = 24 * 4 
+        tide_graph_height = 24 
+        tide_x = WIDTH - tide_graph_width//2
+        tide_y = HEIGHT - tide_graph_height//2
+        draw_tides(tide_x, tide_y, tide_data, tide_graph_width, tide_graph_height)
     
     graphics.update()
 
