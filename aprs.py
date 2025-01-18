@@ -12,7 +12,7 @@ graphics = PicoGraphics(DISPLAY_INKY_PACK)
 WIDTH, HEIGHT = graphics.get_bounds()
 
 def draw_arrow(center_x, center_y, length, heading):
-    RAD_45_DEGREES = 0.7853981633974483   
+    RAD_45_DEGREES = 0.7853981633974483 * 2   
     # Convert heading to radians
     heading_rad = math.radians(90 - heading)
     
@@ -39,32 +39,65 @@ def draw_arrow(center_x, center_y, length, heading):
 
     graphics.line(ah_x, ah_y, end_x, end_y, 2)
 
-def time_in_tz(unix_timestamp, tz_offset):
+def draw_tides(center_x, center_y, tide_data):
+    if not tide_data or "predictions" not in tide_data:
+        return
+        
+    predictions = tide_data["predictions"]
+    if len(predictions) < 2:
+        return
+        
+    # Find min and max values for scaling
+    values = [float(p["v"]) for p in predictions]
+    min_tide = min(values)
+    max_tide = max(values)
+    tide_range = max_tide - min_tide
+    
+    # Graph dimensions
+    graph_width = 100
+    graph_height = 24
+    
+    # Plot points and connect them
+    prev_x = prev_y = None
+    for i, pred in enumerate(predictions):
+        # X coordinate based on time position (0 to graph_width)
+        x = center_x - graph_width//2 + (i * graph_width) // (len(predictions) - 1)
+        
+        # Y coordinate based on tide height
+        value = float(pred["v"])
+        y = center_y - int(((value - min_tide) / tide_range) * graph_height)
+        
+        # Draw point
+        graphics.pixel(x, y)
+        
+        # Connect to previous point
+        if prev_x is not None:
+            graphics.line(prev_x, prev_y, x, y, 1)
+            
+        prev_x, prev_y = x, y
+
+def time_in_tz(unix_timestamp, tz_offset, timeFormat="24"):
     if tz_offset == None:
         tz_offset = 0
-    # Specify your timezone offset in seconds
-    # For example, if your timezone is UTC+2 (Central European Summer Time)
-    # offset would be 2 hours * 3600 seconds/hour = 7200 seconds
-    timezone_offset = tz_offset * 3600  # Adjust this offset according to your timezone
-
-    # Convert to local time by applying the timezone offset
-    local_timestamp = unix_timestamp + timezone_offset
-    local_time = time.localtime(local_timestamp)
-
-    # Format the local time into a readable string
-    formatted_time = "{:02d}-{:02d} {:02d}:{:02d}".format(
-        local_time[1], local_time[2],
-        local_time[3], local_time[4]
-    )
-    if tz_offset == 0:
-        formatted_time += "UTC"
-
-    return formatted_time
+    local_time = time.localtime(unix_timestamp + (tz_offset * 3600))
+    
+    hour = local_time[3]
+    if timeFormat == "12":
+        am_pm = "AM" if hour < 12 else "PM"
+        hour = 12 if hour == 0 else hour % 12 or 12
+        formatted_time = f"{local_time[1]:02d}-{local_time[2]:02d} {hour}:{local_time[4]:02d}{am_pm}"
+    else:
+        formatted_time = f"{local_time[1]:02d}-{local_time[2]:02d} {hour:02d}:{local_time[4]:02d}"
+    
+    return formatted_time + ("UTC" if tz_offset == 0 else "")
 
 display_ssid = None
+current_ssid = None  # Track the currently connected network
 
 def status_handler(mode, status, ip):
-    global display_ssid
+    global display_ssid, current_ssid
+    if status:  # If connection successful
+        current_ssid = display_ssid  # Update current network
     graphics.set_font("bitmap8")
     graphics.set_update_speed(2)
     graphics.set_pen(15)
@@ -88,45 +121,126 @@ def celsius_to_fahrenheit(celsius):
     return (celsius * 9/5) + 32
 
 def aprs_update(config, nickname=None, tz_offset=None):
-    
     ssid = config['ssid']
     psk = config['password']
     callsign = config['callsign']
     api_key = config['api']
-    units = (config['units'] or "C").upper()
+    units = config.get('units', "C").upper()
+    timeFormat = config.get('time', "24")
+
+    tide_station = config.get('tide_station')  # Get tide station if available
     
-    global display_ssid
+    global display_ssid, current_ssid
     display_ssid = ssid
-    uasyncio.get_event_loop().run_until_complete(network_manager.client(ssid, psk))
+    
+    # Only reconnect if we're not already connected to the desired network
+    if current_ssid != ssid:
+        uasyncio.get_event_loop().run_until_complete(network_manager.client(ssid, psk))
 
     if not nickname:
         nickname = callsign
     
+    # Get APRS data
     url = f"https://api.aprs.fi/api/get?name={callsign}&what=wx&apikey={api_key}&format=json"
-    j = ujson.load(urequest.urlopen(url))
+    print("Getting APRS data: ", url)
+    aprs_data = ujson.load(urequest.urlopen(url))
+
+    # Get tide data if station is configured
+    tide_info = ""
+    tide_data = None
+    if tide_station:
+        try:
+            # Get current time and time 24 hours from now
+            current = time.time()  # 1 hour ago
+            end_time = current + (24 * 3600)  # 24 hours after current
+            
+            # Format dates and times as YYYYMMDD HH:MM
+            current_dt = time.localtime(current)
+            
+            begin_date = f"{current_dt[0]}{current_dt[1]:02d}{current_dt[2]:02d}%20{current_dt[3]:02d}:{current_dt[4]:02d}"
+
+            # Get predictions for next 24 hours
+            tide_url = f"https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?begin_date={begin_date}&range=24&station={tide_station}&product=predictions&datum=MLLW&time_zone=gmt&units=english&format=json&interval=15"
+            print("Getting tide data: ", tide_url)
+            tide_data = ujson.load(urequest.urlopen(tide_url))
+            if "predictions" in tide_data and len(tide_data["predictions"]) > 0:
+                current_tide = float(tide_data["predictions"][0]["v"])
+                # Find next extreme (high or low tide)
+                next_extreme = None
+                prev_value = float(tide_data["predictions"][0]["v"])
+                for pred in tide_data["predictions"][1:]:
+                    curr_value = float(pred["v"])
+                    if (prev_value < curr_value and curr_value > float(tide_data["predictions"][tide_data["predictions"].index(pred)+1]["v"])) or \
+                       (prev_value > curr_value and curr_value < float(tide_data["predictions"][tide_data["predictions"].index(pred)+1]["v"])):
+                        next_extreme = curr_value
+                        next_extreme_time = pred["t"]
+                        break
+                    prev_value = curr_value
+                
+                if next_extreme is not None:
+                    tide_type = "H" if next_extreme > current_tide else "L"
+                    # Convert next_extreme_time from "YYYY-MM-DD HH:MM" to Unix timestamp
+                    next_time_parts = next_extreme_time.split()
+                    date_parts = [int(x) for x in next_time_parts[0].split('-')]
+                    time_parts = [int(x) for x in next_time_parts[1].split(':')]
+                    next_time_timestamp = time.mktime((date_parts[0], date_parts[1], date_parts[2], 
+                                                     time_parts[0], time_parts[1], 0, 0, 0, 0))
+                    next_time = time_in_tz(next_time_timestamp, tz_offset, timeFormat).split()[1]  # Get just the time portion
+                    tide_info = f"{current_tide:.1f}' {tide_type} {next_time}"
+                else:
+                    tide_info = f"{current_tide:.1f}'"
+        except Exception as e:
+            print("Tide error:", e)
+            pass
 
     graphics.set_update_speed(1)
     graphics.set_pen(15)
     graphics.clear()
     graphics.set_pen(0)
+    
+    # Initialize y position
+    y_pos = 0
+    
+    if not tide_info:
+        y_pos += 15
+    
+    # Draw timestamp at top
     graphics.set_font("bitmap6")
-    graphics.text(nickname, 10, 10, wordwrap=WIDTH - 20, scale=4)
+    local_time = time_in_tz(int(aprs_data["entries"][0]["time"]), tz_offset, timeFormat)
+    graphics.text(f"at {local_time}", 10, y_pos, wordwrap=WIDTH - 20, scale=1)
+    y_pos += 8
+    
+    # Draw nickname
+    graphics.text(nickname, 10, y_pos, wordwrap=WIDTH - 20, scale=4)
+    y_pos += 34
+    
+    # Draw temperature, humidity, pressure
     graphics.set_font("bitmap8")
-    temp = float(j["entries"][0]["temp"])
+    temp = float(aprs_data["entries"][0]["temp"])
     if units == "F":
         temp = celsius_to_fahrenheit(temp)
-    humidity = j["entries"][0]["humidity"]
-    pressure = float(j["entries"][0]["pressure"])
-    wind_speed = j["entries"][0]["wind_speed"]
-    wind_direction = j["entries"][0]["wind_direction"]
-    draw_arrow(140, 94, 30, int(wind_direction))
-
-    graphics.text(f"{temp:.0f}{units} {humidity}% {pressure:.0f}mb", 10, 50, wordwrap=WIDTH - 20, scale=3)
-    graphics.text(f"{wind_speed} m/s", 10, 80, wordwrap=WIDTH - 20, scale=3)
-    local_time = time_in_tz(int(j["entries"][0]["time"]), tz_offset)
-    graphics.set_font("bitmap6")
-    graphics.text(f"Updated {local_time}", 10, 110, wordwrap=WIDTH - 20, scale=2)
-
+    humidity = aprs_data["entries"][0]["humidity"]
+    pressure = float(aprs_data["entries"][0]["pressure"])
+    graphics.text(f"{temp:.0f}{units} {humidity}% {pressure:.0f}mb", 10, y_pos, wordwrap=WIDTH - 20, scale=3)
+    y_pos += 30
+    
+    # Draw wind info
+    wind_speed = aprs_data["entries"][0]["wind_speed"]
+    wind_direction = aprs_data["entries"][0]["wind_direction"]
+    graphics.text(f"{wind_speed} m/s", 10, y_pos, wordwrap=WIDTH - 20, scale=3)
+    draw_arrow(140, y_pos + 14, 30, int(wind_direction))  # Adjust arrow y position relative to text
+    y_pos += 30
+    
+    # Draw tide info if available
+    if tide_info:
+        graphics.text(tide_info, 10, y_pos, wordwrap=WIDTH - 20, scale=3)
+        draw_tides(200, y_pos + 30, tide_data)  # Adjust tide graph position relative to text
+    
     graphics.update()
+
+
+
+
+
 
 

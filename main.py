@@ -76,17 +76,20 @@ def application_mode(config):
     tz_offset = None if len(config['tz']) == 0 else int(config['tz'])
     nickname = config['callsign'] if len(config['nickname']) == 0 else config['nickname']
 
-    # Update once and then on every button press
+    lowpower = config.get('lowpower', 0) == 1
+    
     while True:
         aprs_update(config, nickname, tz_offset)
         time.sleep(1)
         wlan = network.WLAN()
         wlan.active(False)
         wlan.deinit()
-        button_a = machine.Pin(12, machine.Pin.IN, machine.Pin.PULL_UP)
-        picosleep.pin(12, 1, 0)
+        if lowpower:
+            button_a = machine.Pin(12, machine.Pin.IN, machine.Pin.PULL_UP)
+            picosleep.pin(12, 1, 0)
+        else:
+            time.sleep(30 * 60)
         wlan.active(True)
-
 
 # Figure out which mode to start up in...
 try:
@@ -115,7 +118,10 @@ try:
            machine_reset()
 
 except Exception as e:
-    print(e)
+    import sys
+    sys.print_exception(e)
+    
     # Either no wifi configuration file found, or something went wrong, 
     # so go into setup mode.
     setup_mode()
+
