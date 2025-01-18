@@ -78,7 +78,7 @@ def application_mode(config):
 
     # Update once and then on every button press
     while True:
-        aprs_update(config['ssid'], config['password'], config['callsign'], config['api'], nickname, tz_offset)
+        aprs_update(config, nickname, tz_offset)
         time.sleep(1)
         wlan = network.WLAN()
         wlan.active(False)
