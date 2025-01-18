@@ -121,7 +121,7 @@ def aprs_update(config, nickname=None, tz_offset=None):
     wind_direction = j["entries"][0]["wind_direction"]
     draw_arrow(140, 94, 30, int(wind_direction))
 
-    graphics.text(f"{temp:.0f}{units} {humidity}% {pressure}mb", 10, 50, wordwrap=WIDTH - 20, scale=3)
+    graphics.text(f"{temp:.0f}{units} {humidity}% {pressure:.0f}mb", 10, 50, wordwrap=WIDTH - 20, scale=3)
     graphics.text(f"{wind_speed} m/s", 10, 80, wordwrap=WIDTH - 20, scale=3)
     local_time = time_in_tz(int(j["entries"][0]["time"]), tz_offset)
     graphics.set_font("bitmap6")
