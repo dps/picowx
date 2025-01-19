@@ -39,7 +39,7 @@ def draw_arrow(center_x, center_y, length, heading):
 
     graphics.line(ah_x, ah_y, end_x, end_y, 2)
 
-def draw_tides(center_x, center_y, tide_data, width=100, height=24):
+def draw_tides(center_x, center_y, tide_data, width=100, height=24, rotation=0):
     if not tide_data or "predictions" not in tide_data:
         return
         
@@ -49,31 +49,34 @@ def draw_tides(center_x, center_y, tide_data, width=100, height=24):
         
     # Find min and max values for scaling
     values = [float(p["v"]) for p in predictions]
-    min_tide = min(values)
+    min_tide = min(values) - 2
     max_tide = max(values)
     tide_range = max_tide - min_tide
     
     # Plot points and connect them
     prev_x = prev_y = None
     for i, pred in enumerate(predictions):
-        # X coordinate based on time position (0 to width)
-        x = center_x - width//2 + (i * width) // (len(predictions) - 1)
-        
-        # Y coordinate based on tide height
-        value = float(pred["v"])
-        y = center_y - int(((value - min_tide) / tide_range) * height)
-        
-        # Draw point
-        graphics.pixel(x, y)
-        
-        # Connect to previous point
-        if prev_x is not None:
-            graphics.line(prev_x, prev_y, x, y, 1)
+        if rotation == 90:
+            # For 90 degree rotation, swap width/height and flip coordinates
+            progress = i / (len(predictions) - 1)
+            value = float(pred["v"])
+            x = int(center_x + int(((value - min_tide) / tide_range) * width) - width//2)
+            # Flip y-coordinate by subtracting from height
+            y = int(center_y + height//2 - int(progress * height))
+        else:
+            # Original horizontal layout
+            x = int(center_x - width//2 + (i * width) // (len(predictions) - 1))
+            value = float(pred["v"])
+            y = int(center_y - int(((value - min_tide) / tide_range) * height))
             
         # Check if time ends in :00 (on the hour)
         if pred["t"].split()[1].endswith(":00"):
-            # Draw vertical line from the tide point to the bottom
-            graphics.line(x, y, x, center_y + height//2, 1)
+            if rotation == 90:
+                # Draw horizontal line for rotated view
+                graphics.line(x, y, int(center_x - width//2), y, 3)
+            else:
+                # Draw vertical line for normal view
+                graphics.line(x, y, x, int(center_y + height//2), 3)
             
         prev_x, prev_y = x, y
 
@@ -121,8 +124,19 @@ network_manager = NetworkManager(WIFI_CONFIG.COUNTRY, status_handler=status_hand
 def celsius_to_fahrenheit(celsius):
     return (celsius * 9/5) + 32
 
+def drawLabel(label, x, y, scale=1):
+    graphics.set_font("bitmap6")
+    graphics.text(label, x, y, scale=scale, angle=90)
+    return x - (9 * scale) - 4 # Return next x position for portrait mode
+
+def drawValue(value, x, y, scale=3):
+    graphics.set_font("bitmap8")
+    graphics.text(str(value), x, y, scale=scale, angle=90)
+    return x - (8 * scale) - 4 # Return next x position based on scale
+
 def aprs_update(config, nickname=None, tz_offset=None):
     ssid = config['ssid']
+    
     psk = config['password']
     callsign = config['callsign']
     api_key = config['api']
@@ -149,6 +163,9 @@ def aprs_update(config, nickname=None, tz_offset=None):
     # Get tide data if station is configured
     tide_info = ""
     tide_data = None
+    tide_time = None
+    tide_type = None
+
     if tide_station:
         try:
             # Get current time and time 24 hours from now
@@ -179,7 +196,7 @@ def aprs_update(config, nickname=None, tz_offset=None):
                     prev_value = curr_value
                 
                 if next_extreme is not None:
-                    tide_type = "H" if next_extreme > current_tide else "L"
+                    tide_type = "High tide" if next_extreme > current_tide else "Low tide"
                     # Convert next_extreme_time from "YYYY-MM-DD HH:MM" to Unix timestamp
                     next_time_parts = next_extreme_time.split()
                     date_parts = [int(x) for x in next_time_parts[0].split('-')]
@@ -187,7 +204,8 @@ def aprs_update(config, nickname=None, tz_offset=None):
                     next_time_timestamp = time.mktime((date_parts[0], date_parts[1], date_parts[2], 
                                                      time_parts[0], time_parts[1], 0, 0, 0, 0))
                     next_time = time_in_tz(next_time_timestamp, tz_offset, timeFormat).split()[1]  # Get just the time portion
-                    tide_info = f"{current_tide:.1f}' {tide_type}: {next_time}"
+                    tide_info = f"{current_tide:.1f}'"
+                    tide_time = f"{next_time}"
                 else:
                     tide_info = f"{current_tide:.1f}'"
         except Exception as e:
@@ -198,51 +216,100 @@ def aprs_update(config, nickname=None, tz_offset=None):
     graphics.set_pen(15)
     graphics.clear()
     graphics.set_pen(0)
+
     
-    # Initialize y position
-    y_pos = 3
-    
-    if not tide_info:
-        y_pos += 15
-    
-    # Draw timestamp at top
-    graphics.set_font("bitmap6")
+    # Pre-calculate all values
     local_time = time_in_tz(int(aprs_data["entries"][0]["time"]), tz_offset, timeFormat)
-    graphics.text(f"at {local_time}", 10, y_pos, wordwrap=WIDTH - 20, scale=1)
-    y_pos += 8
-    
-    # Draw nickname
-    graphics.text(nickname, 10, y_pos, wordwrap=WIDTH - 20, scale=4)
-    y_pos += 34
-    
-    # Draw temperature, humidity, pressure
-    graphics.set_font("bitmap8")
     temp = float(aprs_data["entries"][0]["temp"])
     if units == "F":
         temp = celsius_to_fahrenheit(temp)
     humidity = aprs_data["entries"][0]["humidity"]
     pressure = float(aprs_data["entries"][0]["pressure"])
-    graphics.text(f"{temp:.0f}{units.lower()} {humidity}% {pressure:.0f}mb", 10, y_pos, wordwrap=WIDTH - 20, scale=3)
-    y_pos += 29
-    
-    # Draw wind info
     wind_speed = aprs_data["entries"][0]["wind_speed"]
-    wind_direction = aprs_data["entries"][0]["wind_direction"]
-    graphics.text(f"{wind_speed}m/s", 10, y_pos, wordwrap=WIDTH - 20, scale=3)
-    draw_arrow(120, y_pos + 10, 18, int(wind_direction))  # Adjust arrow y position relative to text
-    y_pos += 29
+    wind_direction = int(aprs_data["entries"][0]["wind_direction"])
     
-    # Draw tide info if available
-    if tide_info:
-        graphics.text(tide_info, 10, y_pos, wordwrap=WIDTH - 20, scale=3)
-        # Position tide graph in bottom right
-        tide_graph_width = 24 * 4 
-        tide_graph_height = 24 
-        tide_x = WIDTH - tide_graph_width//2
-        tide_y = HEIGHT - tide_graph_height//2
-        draw_tides(tide_x, tide_y, tide_data, tide_graph_width, tide_graph_height)
+    layout = config.get('layout', 'landscape')
+    
+    if layout == 'landscape':
+
+        print("Rendering landscape layout")
+
+        # Initialize y position
+        y_pos = 3
+        
+        if not tide_info:
+            y_pos += 15
+        
+        # Draw timestamp at top
+        graphics.set_font("bitmap6")
+        graphics.text(f"at {local_time}", 10, y_pos, wordwrap=WIDTH - 20, scale=1)
+        y_pos += 8
+        
+        # Draw nickname
+        graphics.text(nickname, 10, y_pos, wordwrap=WIDTH - 20, scale=4)
+        y_pos += 34
+        
+        # Draw temperature, humidity, pressure
+        graphics.set_font("bitmap8")
+        graphics.text(f"{temp:.0f}{units.lower()} {humidity}% {pressure:.0f}mb", 10, y_pos, wordwrap=WIDTH - 20, scale=3)
+        y_pos += 29
+        
+        # Draw wind info
+        graphics.text(f"{wind_speed}m/s", 10, y_pos, wordwrap=WIDTH - 20, scale=3)
+        draw_arrow(120, y_pos + 10, 18, wind_direction)
+        y_pos += 29
+        
+        # Draw tide info if available
+        if tide_info:
+            graphics.text(f"{tide_info} {tide_type[0]}: {tide_time}", 10, y_pos, wordwrap=WIDTH - 20, scale=3)
+            tide_graph_width = 24 * 4 
+            tide_graph_height = 24 
+            tide_x = WIDTH - tide_graph_width//2
+            tide_y = HEIGHT - tide_graph_height//2
+            draw_tides(tide_x, tide_y, tide_data, tide_graph_width, tide_graph_height)
+    
+    else:  # Portrait layout
+
+        print("Rendering portrait layout")
+        
+        x_pos = WIDTH - 8  # Start from left side
+        y_pos = 8  # Start from top
+        
+        # Draw all items using alternating label and value functions
+        x_pos = drawLabel(local_time, x_pos, y_pos) + 3
+        x_pos = drawLabel(nickname, x_pos, y_pos, scale=2)
+        
+        drawLabel("Temp", x_pos, y_pos)
+        x_pos = drawLabel("Humidity", x_pos, y_pos + WIDTH//5)
+        
+        drawValue(f"{temp:.0f}{units.lower()}", x_pos, y_pos)
+        x_pos = drawValue(f"{humidity}%", x_pos, y_pos + WIDTH//5)
+        
+        x_pos = drawLabel("Pressure", x_pos, y_pos)
+        x_pos = drawValue(f"{pressure:.0f}mb", x_pos, y_pos)
+        
+        x_pos = drawLabel("Wind Speed", x_pos, y_pos)
+        
+        draw_arrow(x_pos - 10, HEIGHT - 14, 16, wind_direction)
+        x_pos = drawValue(f"{wind_speed}m/s", x_pos, y_pos)
+        
+        # Draw tide info if available
+        if tide_info:
+            x_pos = drawLabel("Tide", x_pos, y_pos)
+            x_pos = drawValue(tide_info, x_pos, y_pos)
+
+            x_pos = drawLabel(tide_type, x_pos, y_pos)
+            x_pos = drawValue(tide_time, x_pos, y_pos)
+            # Draw smaller tide graph rotated 90 degrees
+            tide_graph_width = HEIGHT / 4
+            tide_graph_height = HEIGHT
+            tide_x = tide_graph_width//2
+            tide_y = tide_graph_height//2
+            draw_tides(tide_x, tide_y, tide_data, tide_graph_width, tide_graph_height, rotation=90)
     
     graphics.update()
+
+
 
 
 
