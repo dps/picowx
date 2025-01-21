@@ -21,10 +21,10 @@ Most of the logic is implemented in micropython, but the dormant sleep mode requ
 - Clone the repo
 - Flash the .uf2 file (hold down the bootsel button while plugging your pico-w into your computer, then copy the .uf2 file to the mass storage volume that appears).
 - Copy the py and html files in this repo to the board using Thonny
-- Install the following dependencies via Thonny's Tools...Manage Plugins... menu
-  - phew [project page](https://github.com/pimoroni/phew) micropython_phew-0.0.3
-  - urllib [project page](https://github.com/pfalcon/micropython-lib) micropython_urllib.urequest-0.6.3
-    - edit `urequest.py` to `import ssl` instead of `import ussl` 
+- Install the following dependencies via Thonny's Tools -> Manage packages... menu
+  - microython_phew [project page](https://github.com/pimoroni/phew) micropython_phew-0.0.3
+  - urlib.urequest [project page](https://github.com/pfalcon/micropython-lib) micropython_urllib.urequest-0.6.3
+    - edit `urequest.py` to `import ssl` instead of `import ussl`
 - Reboot, configuration mode will start
 
 ### Configuration mode
